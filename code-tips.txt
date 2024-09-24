@@ -1,0 +1,275 @@
+Docker:
+
+pull com tag:
+docker pull image-name:tag
+
+Usa o ubuntu:
+docker run -it ubuntu
+docker ubuntu run
+
+so para se der stop:
+docker run -dit ubuntu
+
+entrar na image:
+ sudo docker exec -ti image-name /bin/bash
+ sudo docker exec -ti id-image bash
+
+executar image sem entrar
+docker exec image-name mkdir /folder-name
+
+conteiner em execução:
+docker ps
+docker container ls
+
+conteiner que não está em execução:
+docker ps -a
+
+remover container:
+docker rm aaa aaa
+
+remover image
+docker rmi aaa aaa
+
+nomear conteiner 
+ sudo docker run -dti --name ubuntu-a ubuntu
+
+copiar para dentro do container
+sudo docker cp novoZip.zip ubuntu-a:/destiny
+
+configurando mysql:
+docker pull mysql
+docker run -e MYSQL_ROOT_PASSWORD=123 --name mysql-a -d -p 3306:3306 mysql
+
+acessar o mysql:
+sudo docker exec -it mysql-a bash
+mysql -u root -p --protocol=tcp
+
+para especificar um volume para persistência de dados local:
+ docker run -e MYSQL_ROOT_PASSWORD=123 --name mysql-a -d -p 3306:3306 --volume=/data/mysql-a:/var/lib/mysql mysql
+
+o /var/lib/mysql acha no inspect
+
+especificar bind:
+ docker run -dti --mount type=bind,src=/data/debian-a,dst=/data debian:9
+
+somente leitura
+ docker run -dti --mount type=bind,src=/data/debian-a,dst=/data,ro debian:9
+
+para volumes controlados pelo docker:
+foi criado data-debian dentro de volumes
+root@server:/var/lib/docker/volumes/data-debian/_data# docker run -dti --name debian-b --mount type=volume,src=data-debian,dst=/data debian:9
+
+SQL SERVER
+criar o container (comando: host pode ser diferente para VM) (porta host usar 1434 por ter o mssql instaldo)(adicionado o comando --cap-add SYS_PTRACE para VM)
+
+docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=Senha@123" --cap-add SYS_PTRACE --name sql1 --hostname sql2 -p 1433:1433 -d mcr.microsoft.com/mssql/server:2022-latest
+
+executar o container:
+docker exec -it sql1 bash
+
+acessar o sql server:
+/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P "Senha@123"
+
+testar:
+select name from sys.databases
+
+SELECT name FROM sys.tables;
+
+
+exemplo de connection string
+"ConnectionStrings": {
+  "CodePulseConnectionString": "Server=192.168.3.73,1433;DataBase=CodePulseDb;User Id=sa;Password=Senha@123;TrustServerCertificate=true"
+}
+
+
+remover todos volumes
+docker volumes prune
+
+remover todos container não ativos:
+docker container prune
+
+para rodar o apache
+ docker run --name apache-a -d -p 80:80 --volume=/data/apache-a:/usr/local/apache2/htdocs httpd
+
+ver memoria usada: 
+docker stats mysql-a
+
+alterar uso da memoria cpu:
+docker update mysql-a -m 800M --cpus 0.2
+
+Já startar o container limitando memoria:
+docker run --name ubuntu-c -dti -m 128M --cpus 0.2 ubuntu
+
+testar a maquina install stress
+stress --cpu 8 --io 4 --vm 2 --vm-bytes 128M --timeout 10s
+stress --cpu 1 --vm-bytes 150M --vm 1 --vm-bytes 100M
+
+criar rede
+docker network create minha-rede
+docker run -dit --name ubuntu-a --network minha-rede ubuntu
+docker network inspect minha-rede
+
+docker inspect container-name
+
+criar image
+docker build . -t ubuntu-python
+
+docker image build -t debian-apache:1.0 .
+
+docker build . -t niltongc/my-go-app:1.0
+
+docker push niltongc/my-go-app:1.0
+
+
+push direto do cli
+
+build como acima
+
+docker tag local-image:tagname new-repo:tagname
+docker push new-repo:tagname
+
+docker tag niltongc/csharpapp:1.0 niltongc/csharpapp:1.0
+docker push niltongc/csharpapp:1.0
+caso der erro na ultima, fazer docker login
+
+
+OU em um container em execução:
+docker commit container nome_img:version
+docker commit sql1 dotnet-angular:1.0
+
+docker tag  repository:tag
+docker tag e770250c1a8a niltongc/dotnet-angular-course:dotnet-angular
+
+docker push repository:tag-criada-anterior
+docker push niltongc/dotnet-angular-course:dotnet-angular
+
+
+
+
+
+
+– docker compose –
+
+docker-compose up -d
+
+docker-compose down
+
+Copiar arquivos do host win para vm linux server usando git bash:
+ scp /c/Users/xjuni/Documents/pessoal/course/Udemy/dotnet-AWSMicroservices/HotelSystemAPI/SearchApi/* nilton@192.168.3.75:/home/nilton/aws-microservice/
+
+
+
+Postgres
+
+docker run --name postgres-mc -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=123 -d postgres
+
+docker exec -it postgres-mc bash
+
+psql -U root
+
+para criar database 
+docker exec -it postgres-mc bash
+createdb --username=root --owner=root simple_bank
+
+
+
+
+goose postgres "postgres://postgres:123@192.168.3.43:5432/rssagg?sslmode=disable" up
+
+docker exec -it idCotenainer bash
+psql -U postgres
+
+\l lista databases
+\c connect database
+\dt show tables
+
+
+
+
+AWS
+
+pacote: 
+Amazon.Lambda.AspNetCore
+
+program: 
+builder.Services.AddDbContext<ScheduleDbContext>(options =>
+{
+    options.UseMySql("server=;port=3306;user id=admin;database=EmployeeSchedule;password=",
+        Microsoft.EntityFrameworkCore.ServerVersion.Parse("8.0.28-mysql"),
+        option => option.EnableRetryOnFailure());
+});
+
+builder.Services.AddAWSLambdaHosting(LambdaEventSource.HttpApi);
+
+quando for fazer deploy e precisar criar nova policy o handler é o nome do namespace da controller.
+
+para configurar novo user
+aws configure
+
+Para criar um bucket s3, cmd
+set /p MYBUCKET="Please enter a bucket name: " && aws s3 mb s3://%MYBUCKET%
+power shell:
+$MYBUCKET= Read-Host -Prompt 'Please enter a bucket name' ; New-S3Bucket -BucketName $MYBUCKET
+
+
+para fazer upload do codigo,cmd 
+aws s3 cp webapp1 "s3://course-dragon-app/dragonsapp/" --recursive
+power shell: 
+Write-S3Object `
+>>   -BucketName course2-dragons-app `
+>>   -KeyPrefix dragonsapp `
+>>   -Folder webapp1 `
+>>   -Recurse
+
+
+Dotnet:
+
+Iniciando projeto via terminal:
+https://learn.microsoft.com/en-us/aspnet/core/tutorials/first-web-api?view=aspnetcore-8.0&tabs=visual-studio-code
+
+opções de dotnet new:
+https://learn-microsoft-com.translate.goog/en-us/dotnet/core/tools/dotnet-new?_x_tr_sl=en&_x_tr_tl=pt&_x_tr_hl=pt-BR&_x_tr_pto=sc
+
+nmap:
+
+mostra a versão, ex: apache, cloudfront etc..
+sudo nmap -p 80,443 d2jhst22mwxhzf.cloudfront.net -sV
+
+sistema operacional
+-O
+
+rodando scripts
+sudo nmap -D RND:10 -v -sC pepper.com.br 
+
+
+Linux:
+
+﻿comando
+
+ps para ver processos
+ps -e ou -ef
+ps -ef | grep 'processo' o grep filtra o processo
+
+jobs para ver os processos
+bg e fg para trazer para o background ou foreground
+pstree para ver os procesos na forma de arvore
+
+chmod
+read 4
+write 2
+execute 1
+Ex:
+chmod 751 nome_arquivo ou chmod (u, g, o)-rwx
+
+locate
+locate -i(ignore case sensitive) -p(ignore punctuation and spaces) -t(ignore accents)
+locate palavra | grep
+
+para localizar programa
+which programa
+sudo mv programa /usr/bin
+
+usuarios
+senha root: sudo passwd
+para adicionar user: adduser nome
+trocar de usuario: su nome
